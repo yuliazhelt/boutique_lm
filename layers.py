@@ -259,12 +259,11 @@ class TransformerDecoder(nn.Module):
 
         # sample new token from logits
         new_tokens = Categorical(logits=logits[:, -1:]).sample()
-        print(tokens.shape, logits.shape, logits[:, -1:].shape, new_tokens.shape)
 
         tokens = torch.cat([tokens, new_tokens], dim=1)
 
         # 2 stopping conditions: reaching max len or getting <eos> token
-        while tokens.shape[1] < self.max_length:
+        while tokens.shape[1] < self.dataset.max_length:
             if new_tokens.item() == self.dataset.eos_id:
                 break
 
