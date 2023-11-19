@@ -215,6 +215,8 @@ class TransformerDecoder(nn.Module):
         # -- Prepare masks
         slf_attn_mask = get_attn_key_pad_mask(seq_k=x, seq_q=x, pad_id=self.pad_id)
         lookahead_mask = get_lookahead_mask(shape=x.shape[1])
+        print(slf_attn_mask.shape, lookahead_mask.shape)
+
         lookahead_mask = torch.max(slf_attn_mask, lookahead_mask)
 
         for dec_block in self.decoder_blocks:
