@@ -156,8 +156,6 @@ class DecoderBlock(nn.Module):
         else:
             return outputs
         
-
-
 def get_non_pad_mask(seq, pad_id):
     assert seq.dim() == 2
     return seq.ne(pad_id).type(torch.float).unsqueeze(-1)
@@ -167,9 +165,7 @@ def get_attn_key_pad_mask(seq_k, seq_q, pad_id):
     # Expand to fit the shape of key query attention matrix.
     len_q = seq_q.size(1)
     padding_mask = seq_k.eq(pad_id)
-    print(padding_mask.shape)
-    padding_mask = padding_mask.expand(-1, len_q, -1)  # b x lq x lk
-    print(padding_mask.shape)
+    padding_mask = padding_mask.unsqueeze(1).expand(-1, len_q, -1)  # b x lq x lk
 
     return padding_mask
 
@@ -209,8 +205,8 @@ class TransformerDecoder(nn.Module):
       return super().to(device, **kwargs)
 
     def forward(self, x):
-        x = self.input_embedding(x)
-        x = self.positional_encoding(x)
+        seq = self.input_embedding(x)
+        seq = self.positional_encoding(seq)
 
         # -- Prepare masks
         slf_attn_mask = get_attn_key_pad_mask(seq_k=x, seq_q=x, pad_id=self.pad_id)
@@ -220,8 +216,8 @@ class TransformerDecoder(nn.Module):
         lookahead_mask = torch.max(slf_attn_mask, lookahead_mask)
 
         for dec_block in self.decoder_blocks:
-            x = dec_block(x, mask=lookahead_mask)
-        logits = self.linear(x)
+            seq = dec_block(seq, mask=lookahead_mask)
+        logits = self.linear(seq)
         return logits
     
     
