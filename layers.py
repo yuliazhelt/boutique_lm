@@ -17,7 +17,6 @@ def scaled_softmax_attention(query, key, value, mask=None):
     L is the length of sequence, D is the embedding dimension
     """
     scaled_kq = (query @ key.transpose(-1, -2)) / (key.shape[-1]) ** (1/2)
-    print(scaled_kq.shape, mask.shape)
     if mask is not None:
         scaled_kq = (1 - mask) * scaled_kq
     attention =  F.softmax(scaled_kq, dim=-1)
