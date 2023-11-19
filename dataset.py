@@ -4,6 +4,7 @@ from typing import Union, List, Tuple
 from sentencepiece import SentencePieceTrainer, SentencePieceProcessor
 from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
+from tqdm import tqdm
 
 
 class TextDataset(Dataset):
@@ -33,8 +34,15 @@ class TextDataset(Dataset):
         # load tokenizer from file
         self.sp_model = SentencePieceProcessor(model_file=sp_model_prefix + '.model')
 
-        with open(data_file, encoding="utf8") as file:
-            texts = file.readlines()
+        # with open(data_file, encoding="utf8") as file:
+        #     texts = file.readlines()
+
+        texts = []
+
+        num_lines = sum(1 for _ in open(data_file,'r'))
+        with open(data_file, 'r') as f:
+            for line in tqdm(f, total=num_lines):
+                texts.append(line)
 
         """
         Split texts to train and validation fixing self.TRAIN_VAL_RANDOM_SEED
