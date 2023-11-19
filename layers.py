@@ -182,6 +182,7 @@ class TransformerDecoder(nn.Module):
         embed_dim: int,
         num_heads: int,
         dataset: TextDataset,
+        feedforward_dim: int = 256,
         num_layers: int = 1,
         activation = nn.ReLU,
         dropout: float = 0.0
