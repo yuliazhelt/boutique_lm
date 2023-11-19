@@ -96,7 +96,7 @@ def validation_epoch(model: LanguageModel, criterion: nn.Module,
         Accumulate sum of losses for different batches in val_loss
         """
         indices = indices[:, :lengths.max()].to(model.device)
-        logits = model(indices[:, :-1], lengths - 1)
+        logits = model(indices[:, :-1])
         loss = criterion(logits.transpose(1, 2), indices[:, 1:])
         val_loss += loss.item() * indices.shape[0]
 
