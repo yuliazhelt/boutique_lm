@@ -5,6 +5,7 @@ from dataset import TextDataset
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from torch.distributions.categorical import Categorical
 
+
 class LanguageModel(nn.Module):
     def __init__(self, dataset: TextDataset, embed_size: int = 256, hidden_size: int = 256,
                  rnn_type: Type = nn.RNN, rnn_layers: int = 1):
