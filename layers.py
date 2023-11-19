@@ -181,11 +181,9 @@ class TransformerDecoder(nn.Module):
         self,
         embed_dim: int,
         num_heads: int,
-        feedforward_dim: int,
-        num_layers: int,
         dataset: TextDataset,
-        activation = nn.GELU,
-        max_len: int = 5000,
+        num_layers: int = 1,
+        activation = nn.ReLU,
         dropout: float = 0.0
     ):
         super().__init__()
@@ -197,7 +195,7 @@ class TransformerDecoder(nn.Module):
             embedding_dim=embed_dim,
             padding_idx=self.pad_id
         )
-        self.positional_encoding = PositionalEncoding(embed_dim=embed_dim, max_len=max_len)
+        self.positional_encoding = PositionalEncoding(embed_dim=embed_dim, max_len=dataset.max_length)
 
         self.decoder_blocks = nn.ModuleList([DecoderBlock(embed_dim=embed_dim, num_heads=num_heads, feedforward_dim=feedforward_dim, activation=activation, dropout=dropout)])
 
