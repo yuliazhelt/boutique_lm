@@ -200,7 +200,7 @@ class TransformerDecoder(nn.Module):
 
         self.decoder_blocks = nn.ModuleList([DecoderBlock(embed_dim=embed_dim, num_heads=num_heads, feedforward_dim=feedforward_dim, activation=activation, dropout=dropout)])
 
-        self.linear = nn.Linear(embed_dim, self.vocab_size)
+        self.linear = nn.Linear(embed_dim, dataset.vocab_size)
 
     def to(self, device, **kwargs):
       self.device = device
