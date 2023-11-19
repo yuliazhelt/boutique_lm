@@ -81,14 +81,17 @@ class MultiheadAttention(nn.Module):
         if mask is not None:
             mask = mask.repeat(self.num_heads, 1, 1)
 
-        res, attention = scaled_softmax_attention(query, key, value, mask=mask)
-        res = res.transpose(1, 2).reshape(batch_size, len, self.embed_dim)
-        outputs = self.o_proj(res)
+        output, attention = scaled_softmax_attention(query, key, value, mask=mask)
+        output = output.view(self.num_heads, batch_size, len, self.head_dim)
+        output = output.permute(1, 2, 0, 3).contiguous().view(batch_size, len, -1)  # b x lq x embed_dim
+
+        output = self.o_proj(output)
+
 
         if return_attention:
-            return outputs, attention
+            return output, attention
         else:
-            return outputs
+            return output
 
 
 class PositionalEncoding(nn.Module):
@@ -256,7 +259,7 @@ class TransformerDecoder(nn.Module):
 
         # sample new token from logits
         new_tokens = Categorical(logits=logits[:, -1:]).sample()
-        print(tokens.shape, new_tokens.shape)
+        print(tokens.shape, logits.shape, logits[:, -1:].shape, new_tokens.shape)
 
         tokens = torch.cat([tokens, new_tokens], dim=1)
 
