@@ -250,12 +250,12 @@ class TransformerDecoder(nn.Module):
         tokens = torch.tensor(tokens).unsqueeze(0).to(self.device)
 
         # generate hidden for prefix
-        tokens = self.input_embedding(tokens)
-        tokens = self.positional_encoding(tokens)
+        embeds = self.input_embedding(tokens)
+        embeds = self.positional_encoding(embeds)
 
         for dec_block in self.decoder_blocks:
-            tokens = dec_block(tokens)
-        logits = self.linear(tokens) / temp
+            embeds = dec_block(embeds)
+        logits = self.linear(embeds) / temp
 
         # sample new token from logits
         new_tokens = Categorical(logits=logits[:, -1:]).sample()
