@@ -71,11 +71,17 @@ class MultiheadAttention(nn.Module):
         key = self.k_proj(x)
         value = self.v_proj(x)
         batch_size, len, _ = x.shape
-        query = query.reshape(batch_size, len, self.num_heads, self.head_dim).transpose(1, 2)
-        key = key.reshape(batch_size, len, self.num_heads, self.head_dim).transpose(1, 2)
-        value = value.reshape(batch_size, len, self.num_heads, self.head_dim).transpose(1, 2)
+        query = query.reshape(batch_size, len, self.num_heads, self.head_dim)
+        key = key.reshape(batch_size, len, self.num_heads, self.head_dim)
+        value = value.reshape(batch_size, len, self.num_heads, self.head_dim)
+
+        query = query.permute(2, 0, 1, 3).contiguous().view(-1, len, self.head_dim)  # (n*b) x lq x dk
+        key = key.permute(2, 0, 1, 3).contiguous().view(-1, len, self.head_dim)  # (n*b) x lk x dk
+        value = value.permute(2, 0, 1, 3).contiguous().view(-1, len, self.head_dim)  # (n*b) x lv x dv
+
         if mask is not None:
             mask = mask.repeat(self.num_heads, 1, 1)
+
         res, attention = scaled_softmax_attention(query, key, value, mask=mask)
         res = res.transpose(1, 2).reshape(batch_size, len, self.embed_dim)
         outputs = self.o_proj(res)
