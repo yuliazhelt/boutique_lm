@@ -152,7 +152,9 @@ class DecoderBlock(nn.Module):
             attention: Optional[torch.Tensor] (B, num_heads, L, L)
         """
 
-        outputs, attention = self.mha(x, return_attention=True, mask=mask)
+        outputs = self.layer_norm(x)
+
+        outputs, attention = self.mha(outputs, return_attention=True, mask=mask)
 
         outputs = self.layer_norm(x + outputs)
         outputs = self.activation(self.linear1(outputs))
@@ -203,9 +205,10 @@ class TransformerDecoder(nn.Module):
             embedding_dim=embed_dim,
             padding_idx=self.pad_id
         )
+        self.num_layers = num_layers
         self.positional_encoding = PositionalEncoding(embed_dim=embed_dim, max_len=dataset.max_length)
 
-        self.decoder_blocks = nn.ModuleList([DecoderBlock(embed_dim=embed_dim, num_heads=num_heads, feedforward_dim=feedforward_dim, activation=activation, dropout=dropout)])
+        self.decoder_blocks = nn.ModuleList([DecoderBlock(embed_dim=embed_dim, num_heads=num_heads, feedforward_dim=feedforward_dim, activation=activation, dropout=dropout) for _ in range(num_layers)])
 
         self.linear = nn.Linear(embed_dim, dataset.vocab_size)
 

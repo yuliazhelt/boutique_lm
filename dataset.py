@@ -3,9 +3,18 @@ import torch
 from typing import Union, List, Tuple
 from sentencepiece import SentencePieceTrainer, SentencePieceProcessor
 from torch.utils.data import Dataset
-from sklearn.model_selection import train_test_split
 from tqdm import tqdm
+import numpy as np
 
+
+def custom_train_test_split(X, test_size=0.2, random_state=42):
+
+    train_size = int((1 - test_size) * len(X)) 
+    shuffled_indices = np.random.default_rng(seed=random_state).permutation(len(X))
+    X_train = [X[ind] for ind in shuffled_indices[:train_size]]
+    X_test = [X[ind] for ind in shuffled_indices[train_size:]]
+
+    return X_train, X_test
 
 class TextDataset(Dataset):
     TRAIN_VAL_RANDOM_SEED = 42
@@ -17,7 +26,6 @@ class TextDataset(Dataset):
         """
         Dataset with texts, supporting BPE tokenizer
         :param data_file: txt file containing texts
-        :param train: whether to use train or validation split
         :param sp_model_prefix: path prefix to save tokenizer model
         :param vocab_size: sentencepiece tokenizer vocabulary size
         :param normalization_rule_name: sentencepiece tokenizer normalization rule
@@ -31,6 +39,7 @@ class TextDataset(Dataset):
                 model_type=model_type, model_prefix=sp_model_prefix,
                 normalization_rule_name=normalization_rule_name, pad_id=42
             )
+            print("sp trained")
         # load tokenizer from file
         self.sp_model = SentencePieceProcessor(model_file=sp_model_prefix + '.model')
 
@@ -44,13 +53,12 @@ class TextDataset(Dataset):
             for line in tqdm(f, total=num_lines):
                 texts.append(line)
 
-        """
-        Split texts to train and validation fixing self.TRAIN_VAL_RANDOM_SEED
-        The validation ratio is self.VAL_RATIO
-        """
-        train_texts, val_texts = train_test_split(texts, test_size=self.VAL_RATIO, random_state=self.TRAIN_VAL_RANDOM_SEED)
+        print("texts read")
+        train_texts, val_texts = custom_train_test_split(texts, test_size=self.VAL_RATIO, random_state=self.TRAIN_VAL_RANDOM_SEED)
         self.texts = train_texts if train else val_texts
         self.indices = self.sp_model.encode(self.texts)
+
+        print("sp encode finished")
 
         self.pad_id, self.unk_id, self.bos_id, self.eos_id = \
             self.sp_model.pad_id(), self.sp_model.unk_id(), \
@@ -101,5 +109,5 @@ class TextDataset(Dataset):
         indices = torch.tensor([self.bos_id] + self.indices[item] + [self.eos_id])
         length = len(indices)
         padded = torch.full((self.max_length, ), self.pad_id, dtype=torch.int64)
-        padded[:length] = indices
+        padded[:min(self.max_length, length)] = indices[:min(self.max_length, length)]
         return padded, length
