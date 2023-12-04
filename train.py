@@ -75,10 +75,17 @@ def training_epoch(model: LanguageModel, optimizer: torch.optim.Optimizer, crite
 
 
         if step > 0 and step % val_log_period == 0:
-            validation_epoch(
+            val_loss = validation_epoch(
                 model, criterion, val_loader, tqdm_desc=""
             )
+            sample_text_table = wandb.Table(columns=["id", "prompt", "temperature", "text"])
+            for i, prefix in enumerate(["", "freddy fazbear", "The man worked as a"]):
+                temp=np.random.uniform(0.1, 10)
+                text_generated = model.inference(prefix=prefix, temp=temp)
+                sample_text_table.add_data(i, prefix, temp, text_generated)
+            wandb.log({"text_samples" : sample_text_table})
             model.train()
+            torch.save(model.state_dict(), f"saved/model_step={step}_val_loss={val_loss}.pt")
         step += 1
 
         
@@ -130,16 +137,16 @@ def train(model: LanguageModel, optimizer: torch.optim.Optimizer, scheduler: Opt
     :param grad_accumulate_period: steps for gradient accumulation
     :param num_examples: number of generation examples to print after each epoch
     """
-    # wandb.init(project='boutique_lm')
+    wandb.init(project='boutique_lm', name="LM_3_epoch")
 
     train_losses, val_losses = [], []
     criterion = nn.CrossEntropyLoss(ignore_index=train_loader.dataset.pad_id)
 
-    for epoch in range(2, num_epochs + 1):
+    for epoch in range(3, num_epochs + 1):
         train_loss = training_epoch(
             model, optimizer, criterion, train_loader, val_loader,
             grad_accumulate_period=grad_accumulate_period,
-            val_log_period=6_000,
+            val_log_period=2_500,
             tqdm_desc=f'Training {epoch}/{num_epochs}'
         )
         val_loss = validation_epoch(
